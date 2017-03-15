@@ -27,9 +27,7 @@ import mt.filter.AnalyticsFilter;
  *
  */
 public class MicroServer implements MicroTraderServer {
-	//teste de commit
-	//primeiro trabalho ESII
-		
+	
 	public static void main(String[] args) {
 		ServerComm serverComm = new AnalyticsFilter(new ServerCommImpl());
 		MicroTraderServer server = new MicroServer();
