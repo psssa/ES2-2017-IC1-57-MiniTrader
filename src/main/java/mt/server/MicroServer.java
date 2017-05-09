@@ -23,10 +23,10 @@ import mt.filter.AnalyticsFilter;
  * MicroTraderServer implementation. This class should be responsible
  * to do the business logic of stock transactions between buyers and sellers.
  * 
- * @author Group 78
+ * @author Group 57
  *
  */
-public class MicroServer implements MicroTraderServer { //b EUA
+public class MicroServer implements MicroTraderServer { // Branch EUA
 	
 	public static void main(String[] args) {
 		ServerComm serverComm = new AnalyticsFilter(new ServerCommImpl());
