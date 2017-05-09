@@ -254,7 +254,7 @@ public class MicroServer implements MicroTraderServer { //Branch Europa !
 		Set<Order> orders = orderMap.get(o.getNickname());
 		orders.add(o);	
 		return true;}
-		serverComm.sendError(o.getNickname(), "Number of units must be greater than 9");
+		serverComm.sendError(o.getNickname(), "Number of units must be greater than nine");
 		return false;
 	}
 
