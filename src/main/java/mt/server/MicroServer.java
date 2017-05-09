@@ -26,7 +26,7 @@ import mt.filter.AnalyticsFilter;
  * @author Group 78
  *
  */
-public class MicroServer implements MicroTraderServer { // Branch Asia 
+public class MicroServer implements MicroTraderServer { // bbBranch Asia 
 	
 	public static void main(String[] args) {
 		ServerComm serverComm = new AnalyticsFilter(new ServerCommImpl());
