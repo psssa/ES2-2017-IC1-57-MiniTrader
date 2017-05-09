@@ -219,8 +219,7 @@ public class MicroServer implements MicroTraderServer { //Branch Europa
 		Order o = msg.getOrder();
 		
 		// save the order on map
-		saveOrder(o);
-
+		if(saveOrder(o)){
 		// if is buy order
 		if (o.isBuyOrder()) {
 			processBuy(msg.getOrder());
@@ -239,7 +238,7 @@ public class MicroServer implements MicroTraderServer { //Branch Europa
 
 		// reset the set of changed orders
 		updatedOrders = new HashSet<>();
-
+		}
 	}
 	
 	/**
@@ -248,12 +247,15 @@ public class MicroServer implements MicroTraderServer { //Branch Europa
 	 * @param o
 	 * 			the order to be stored on map
 	 */
-	private void saveOrder(Order o) {
+	private boolean saveOrder(Order o) {
 		LOGGER.log(Level.INFO, "Storing the new order...");
-		
+		if (o.getNumberOfUnits() > 10){
 		//save order on map
 		Set<Order> orders = orderMap.get(o.getNickname());
-		orders.add(o);		
+		orders.add(o);	
+		return true;}
+		serverComm.sendError(o.getNickname(), "Number of units must be greater than 9");
+		return false;
 	}
 
 	/**
