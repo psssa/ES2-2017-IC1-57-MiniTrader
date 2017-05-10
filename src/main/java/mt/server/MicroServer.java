@@ -1,4 +1,6 @@
 package mt.server;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -11,6 +13,18 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
+
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.xml.sax.SAXException;
 
 import mt.Order;
 import mt.comm.ServerComm;
@@ -27,6 +41,8 @@ import mt.filter.AnalyticsFilter;
  *
  */
 public class MicroServer implements MicroTraderServer { // Branch EUA
+	
+	private Set<Order> orders;
 
 	public static void main(String[] args) {
 		ServerComm serverComm = new AnalyticsFilter(new ServerCommImpl());
@@ -102,7 +118,6 @@ public class MicroServer implements MicroTraderServer { // Branch EUA
 					if(msg.getOrder().getServerOrderID() == EMPTY){
 						msg.getOrder().setServerOrderID(id++);
 					}
-					notifyAllClients(msg.getOrder());
 					processNewOrder(msg);
 				} catch (ServerException e) {
 					serverComm.sendError(msg.getSenderNickname(), e.getMessage());
@@ -220,6 +235,8 @@ public class MicroServer implements MicroTraderServer { // Branch EUA
 
 		// save the order on map
 		if(saveOrder(o)){
+			notifyAllClients(msg.getOrder());
+
 			// if is buy order
 			if (o.isBuyOrder()) {
 				processBuy(msg.getOrder());
@@ -252,15 +269,64 @@ public class MicroServer implements MicroTraderServer { // Branch EUA
 		LOGGER.log(Level.INFO, "Storing the new order...");
 		if (o.getNumberOfUnits() > 10){
 			//save order on map
-			Set<Order> orders = orderMap.get(o.getNickname());
+			orders = orderMap.get(o.getNickname());
 			orders.add(o);	
-			es = true;
-			System.out.println("Não deu erro " + es);
-			return es;
+			try {
+				exportXml(o);
+				es = true;
+				System.out.println("Não deu erro " + es);
+				return es;
+			} catch (ServerException | SAXException | IOException e) {
+				
+				System.out.println("SAVE ORDER - Não foi possivel exportar para o XML");
+			}
+			
 		}
 		serverComm.sendError(o.getNickname(), "Number of units must be greater than 9");
 		System.out.println("Deu erro " + es);
 		return es;
+	}
+	
+	
+	private void exportXml(Order o) throws ServerException, SAXException, IOException {
+		// orders.add(o);
+		String tipo = null;
+		try {
+			DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+			DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+			Document doc = dBuilder.newDocument();
+			Element principalElement = doc.createElement("Orders");
+			doc.appendChild(principalElement);
+			// doc.getDocumentElement().normalize();
+			for (int i = 0; i < orders.size(); ++i) {
+				Element newElementOrder = doc.createElement("Order");
+				newElementOrder.setAttribute("Id", "" + o.getServerOrderID());
+				if (o.isBuyOrder())
+					tipo = "buy";
+				else
+					tipo = "sell";
+				newElementOrder.setAttribute("Type", tipo);
+				newElementOrder.setAttribute("Stock", "" + o.getStock());
+				newElementOrder.setAttribute("Units", "" + o.getNumberOfUnits());
+				newElementOrder.setAttribute("Price", "" + o.getPricePerUnit());
+				principalElement.appendChild(newElementOrder);
+			}
+			System.out.println("Save XML document.");
+			Transformer transformer;
+			try {
+				transformer = TransformerFactory.newInstance().newTransformer();
+				transformer.setOutputProperty(OutputKeys.INDENT, "yes");
+				StreamResult result = new StreamResult(new FileOutputStream("MicroTraderPersistence_US.xml"));
+				DOMSource source = new DOMSource(doc);
+				transformer.transform(source, result);
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 	
 
