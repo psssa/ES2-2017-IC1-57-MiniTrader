@@ -268,47 +268,62 @@ public class MicroServer implements MicroTraderServer { //Branch Europa
 	private boolean saveOrder(Order o) {
 		boolean es = false;
 		LOGGER.log(Level.INFO, "Storing the new order...");
-		if (o.getNumberOfUnits() > 10){
-			//save order on map
+		if (o.getNumberOfUnits() >= 10) {
+			// save order on map
 			orders = orderMap.get(o.getNickname());
-			orders.add(o);	
-			try {
-				exportXml(o);
-				es = true;
-				System.out.println("Não deu erro " + es);
-				return es;
-			} catch (ServerException | SAXException | IOException e) {
-				
-				System.out.println("SAVE ORDER - Não foi possivel exportar para o XML");
+			orders.add(o);
+
+			int sellOrders = 0;
+
+			for (Iterator<Order> it = orders.iterator(); it.hasNext();) {
+				Order order = it.next();
+				if (order.isSellOrder()) {
+					sellOrders++;
+					System.out.println("Pedidos venda " + sellOrders);
+				}
+
+				if (sellOrders <= 5) {
+					//try {
+						//exportXml(o); //faz inserção na gui
+						es = true;
+//					} catch (ServerException | SAXException | IOException e) {
+//						System.out.println("SAVE ORDER - Não foi possivel exportar para o XML");
+//					}
+				} else {
+					serverComm.sendError(o.getNickname(), "You can't have more than 5 sell orders pending");
+					orders.remove(order);
+					es = false;
+					return es;
+				}
+
 			}
-			
+		} else {
+			serverComm.sendError(o.getNickname(), "Number of units must be greater than 9");
 		}
-		serverComm.sendError(o.getNickname(), "Number of units must be greater than 9");
-		System.out.println("Deu erro " + es);
 		return es;
 	}
 	
 	
 	private void exportXml(Order o) throws ServerException, SAXException, IOException {
-		// orders.add(o);
+		orders.add(o);
 		String tipo = null;
 		try {
-			DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
-			DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+	        DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+	        DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
 			Document doc = dBuilder.newDocument();
-			
-			System.out.println("Save XML document.");
-			Transformer transformer;
-			try {
-				transformer = TransformerFactory.newInstance().newTransformer();
-				transformer.setOutputProperty(OutputKeys.INDENT, "yes");
-				StreamResult result = new StreamResult(new FileOutputStream("MicroTraderPersistence_EU.xml"));
-				DOMSource source = new DOMSource(doc);
-				transformer.transform(source, result);
-			} catch (Exception e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
+			Element principalElement = doc.createElement("Orders");
+			doc.appendChild(principalElement);
+//	         Transformer transformer;
+//			try {
+//				transformer = TransformerFactory.newInstance().newTransformer();		
+//				transformer.setOutputProperty(OutputKeys.INDENT, "yes");
+//				
+//				DOMSource source = new DOMSource(doc);
+//				transformer.transform(source, result); 
+//			} catch (Exception e) {
+//				// TODO Auto-generated catch block
+//				e.printStackTrace();
+//			}
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
