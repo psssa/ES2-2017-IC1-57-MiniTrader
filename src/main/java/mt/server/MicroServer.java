@@ -7,10 +7,12 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -272,11 +274,18 @@ public class MicroServer implements MicroTraderServer { //Branch Europa
 			// save order on map
 			orders = orderMap.get(o.getNickname());
 			orders.add(o);
+			
+			HashSet<Order> notOrders = new HashSet<>();
+
+			//percorres a lista e se houver alguma order com o meu nome e o mesmo nome do produto nao posso comparar e tem que ser o contrario do tipo de pedido
 
 			int sellOrders = 0;
 
 			for (Iterator<Order> it = orders.iterator(); it.hasNext();) {
+							
 				Order order = it.next();
+				System.out.println(order);
+				
 				if (order.isSellOrder()) {
 					sellOrders++;
 					System.out.println("Pedidos venda " + sellOrders);
@@ -285,13 +294,21 @@ public class MicroServer implements MicroTraderServer { //Branch Europa
 				if (sellOrders <= 5) {
 					//try {
 						//exportXml(o); //faz inserção na gui
+					
 						es = true;
 //					} catch (ServerException | SAXException | IOException e) {
 //						System.out.println("SAVE ORDER - Não foi possivel exportar para o XML");
 //					}
 				} else {
+					if (orders.contains(o)) {
+						notOrders.add(o);
+					}
+					
 					serverComm.sendError(o.getNickname(), "You can't have more than 5 sell orders pending");
-					orders.remove(order);
+					System.out.println("Lista ANTES " + orders);
+					orders.removeAll(notOrders);
+					
+					System.out.println("Lista DEPOIS " + orders);
 					es = false;
 					return es;
 				}
