@@ -267,26 +267,55 @@ public class MicroServer implements MicroTraderServer { // Branch EUA
 	private boolean saveOrder(Order o) {
 		boolean es = false;
 		LOGGER.log(Level.INFO, "Storing the new order...");
-		if (o.getNumberOfUnits() > 10){
-			//save order on map
+		if (o.getNumberOfUnits() >= 10) {
+			// save order on map
 			orders = orderMap.get(o.getNickname());
-			orders.add(o);	
-			try {
-				exportXml(o);
-				es = true;
-				System.out.println("Não deu erro " + es);
-				return es;
-			} catch (ServerException | SAXException | IOException e) {
-				
-				System.out.println("SAVE ORDER - Não foi possivel exportar para o XML");
-			}
+			orders.add(o);
 			
+			HashSet<Order> notOrders = new HashSet<>();
+
+			//percorres a lista e se houver alguma order com o meu nome e o mesmo nome do produto nao posso comparar e tem que ser o contrario do tipo de pedido
+
+			int sellOrders = 0;
+
+			for (Iterator<Order> it = orders.iterator(); it.hasNext();) {
+							
+				Order order = it.next();
+				System.out.println(order);
+				
+				if (order.isSellOrder()) {
+					sellOrders++;
+					System.out.println("Pedidos venda " + sellOrders);
+				}
+
+				if (sellOrders <= 5) {
+					//try {
+						//exportXml(o); 
+					
+						es = true;
+//					} catch (ServerException | SAXException | IOException e) {
+//						System.out.println("SAVE ORDER - Não foi possivel exportar para o XML");
+//					}
+				} else {
+					if (orders.contains(o)) {
+						notOrders.add(o);
+					}
+					
+					serverComm.sendError(o.getNickname(), "You can't have more than 5 sell orders pending");
+					System.out.println("Lista ANTES " + orders);
+					orders.removeAll(notOrders);
+					
+					System.out.println("Lista DEPOIS " + orders);
+					es = false;
+					return es;
+				}
+
+			}
+		} else {
+			serverComm.sendError(o.getNickname(), "Number of units must be greater than 9");
 		}
-		serverComm.sendError(o.getNickname(), "Number of units must be greater than 9");
-		System.out.println("Deu erro " + es);
 		return es;
 	}
-	
 	
 	private void exportXml(Order o) throws ServerException, SAXException, IOException {
 		// orders.add(o);
