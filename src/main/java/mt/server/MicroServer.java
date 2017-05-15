@@ -274,40 +274,76 @@ public class MicroServer implements MicroTraderServer { //Branch Europa
 			// save order on map
 			orders = orderMap.get(o.getNickname());
 			orders.add(o);
-			
+
 			HashSet<Order> notOrders = new HashSet<>();
 
-			//percorres a lista e se houver alguma order com o meu nome e o mesmo nome do produto nao posso comparar e tem que ser o contrario do tipo de pedido
+			// percorres a lista e se houver alguma order com o meu nome e o
+			// mesmo nome do produto nao posso comparar e tem que ser o
+			// contrario do tipo de pedido
 
 			int sellOrders = 0;
+			
+//			System.out.println("Order que recebi " + o.);
 
 			for (Iterator<Order> it = orders.iterator(); it.hasNext();) {
-							
+
 				Order order = it.next();
-				System.out.println(order);
+				orders.add(order);
+
+				if (orders.size() >= 1) {
+					if (order.getNickname().equals(o.getNickname())) {
+						System.out.println("nomes iguais");
+						if (!(order.getStock().equals(o.getStock()))) {
+							System.out.println("stocks iguais");
+							if (!(order.getNumberOfUnits() == o.getNumberOfUnits())) {
+								System.out.println("Numero de unidades iguais");
+								if (!(order.getPricePerUnit() == o.getPricePerUnit())) {
+									System.out.println("preços iguais");
+
+									
+								}
+							}
+						}
+					}
+					
+				}
 				
+				if (order.isBuyOrder() && o.isSellOrder()){
+					serverComm.sendError(o.getNickname(), "You can't sell a product that you want to buy");
+					orders.remove(o);
+					return false;
+				}
+				else if (order.isSellOrder() && o.isBuyOrder()){
+					serverComm.sendError(o.getNickname(), "You can't buy a product that you want to sell");
+					orders.remove(o);
+					return false;
+				}
+			
+
 				if (order.isSellOrder()) {
 					sellOrders++;
 					System.out.println("Pedidos venda " + sellOrders);
 				}
 
 				if (sellOrders <= 5) {
-					//try {
-						//exportXml(o); //faz inserção na gui
-					
-						es = true;
-//					} catch (ServerException | SAXException | IOException e) {
-//						System.out.println("SAVE ORDER - Não foi possivel exportar para o XML");
-//					}
+					// try {
+					// exportXml(o); //faz inserção na gui
+
+					es = true;
+					// } catch (ServerException |
+					// SAXException | IOException
+					// e) {
+					// System.out.println("SAVE ORDER - Não
+					// foi possivel
+					// exportar para o XML");
+					// }
 				} else {
-					if (orders.contains(o)) {
-						notOrders.add(o);
-					}
-					
+					notOrders.add(o);
+
 					serverComm.sendError(o.getNickname(), "You can't have more than 5 sell orders pending");
 					System.out.println("Lista ANTES " + orders);
 					orders.removeAll(notOrders);
-					
+
 					System.out.println("Lista DEPOIS " + orders);
 					es = false;
 					return es;
