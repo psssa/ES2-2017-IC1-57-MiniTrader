@@ -313,7 +313,7 @@ public class MicroServer implements MicroTraderServer { // Branch EUA
 	
 	
 	private boolean ordersToIgnore(Order o){
-		HashSet<Order> notOrders = new HashSet<>();
+		HashSet<Order> notOrders = new HashSet<>(); 
 		notOrders.add(o);
 		
 		serverComm.sendError(o.getNickname(), "You can't have more than 5 sell orders pending");
