@@ -376,7 +376,7 @@ public class MicroServer implements MicroTraderServer { // Branch EUA
 	private void processSell(Order sellOrder){
 		LOGGER.log(Level.INFO, "Processing sell order...");
 
-		for (Entry<String, Set<Order>> entry : orderMap.entrySet()) {
+		for (Entry<String, Set<Order>> entry : orderMap.entrySet()) {  
 			for (Order o : entry.getValue()) {
 				if (o.isBuyOrder() && o.getStock().equals(sellOrder.getStock()) && o.getPricePerUnit() >= sellOrder.getPricePerUnit()) {
 					doTransaction (o, sellOrder);
