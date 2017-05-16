@@ -13,6 +13,9 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import static org.mockito.Mockito.*;
+
+import java.sql.Savepoint;
+
 import org.mockito.runners.MockitoJUnitRunner;
 
 /**
@@ -108,6 +111,50 @@ public class MicroServerTest {
 		
 	}
 	
+	@Test
+	public void notSavingOrder(){
+		ms = new MicroServer();
+		ms.start(serverComm);
+		
+		when(msg3.getType()).thenReturn(Type.CONNECTED);
+		when(msg3.getOrder()).thenReturn(null);
+		when(msg3.getSenderNickname()).thenReturn("userA");
+		
+		when(msg1.getType()).thenReturn(Type.NEW_ORDER);
+		when(msg1.getOrder()).thenReturn(Order.createSellOrder("userA", "MSFT", 10, 20.0));
+		when(msg1.getSenderNickname()).thenReturn("userA");
+		
+		when(msg2.getType()).thenReturn(Type.NEW_ORDER);
+		when(msg2.getOrder()).thenReturn(Order.createSellOrder("userA", "ABC", 10, 20.0));
+		when(msg2.getSenderNickname()).thenReturn("userA");
+		
+		when(msg3.getType()).thenReturn(Type.NEW_ORDER);
+		when(msg3.getOrder()).thenReturn(Order.createSellOrder("userA", "EFG", 10, 20.0));
+		when(msg3.getSenderNickname()).thenReturn("userA");
+		
+		when(msg4.getType()).thenReturn(Type.NEW_ORDER);
+		when(msg4.getOrder()).thenReturn(Order.createSellOrder("userA", "HIJ", 10, 20.0));
+		when(msg4.getSenderNickname()).thenReturn("userA");
+		
+		when(msg5.getType()).thenReturn(Type.NEW_ORDER);
+		when(msg5.getOrder()).thenReturn(Order.createSellOrder("userA", "KLM", 10, 20.0));
+		when(msg5.getSenderNickname()).thenReturn("userA");
+		
+		when(msg6.getType()).thenReturn(Type.NEW_ORDER);
+		when(msg6.getOrder()).thenReturn(Order.createSellOrder("userA", "OPQ", 10, 20.0));
+		when(msg6.getSenderNickname()).thenReturn("userA");
+		
+		when(msg7.getType()).thenReturn(Type.NEW_ORDER);
+		when(msg7.getOrder()).thenReturn(Order.createSellOrder("userA", "RST", 10, 20.0));
+		when(msg7.getSenderNickname()).thenReturn("userA");
+		
+		when(serverComm.getNextMessage()).thenReturn(msg1).thenReturn(msg2).thenReturn(msg3).thenReturn(msg4).thenReturn(msg5).thenReturn(msg6).thenReturn(msg7).thenReturn(null);
+		
+		verify(serverComm, atLeastOnce()).sendError(msg7.getSenderNickname(), "You can't have more than 5 sell orders pending");
+		
+	}
+	
+	
 	@After
 	public void tearDown(){
 		ms = null;
@@ -172,7 +219,7 @@ public class MicroServerTest {
 		when(serverComm.getNextMessage()).thenReturn(msg1).thenReturn(msg2).thenReturn(msg3).thenReturn(msg4).thenReturn(msg5).thenReturn(msg6).thenReturn(null);
 		ms.start(serverComm);
 		
-		verify(serverComm, atLeastOnce()).sendOrder("userA", Order.createSellOrder("userA", "MSFT", 5, 20.0));
+		verify(serverComm, atLeastOnce()).sendOrder("userA", Order.createSellOrder("userA", "MSFT", 10, 20.0));
 	}
 	
 	@Test
@@ -183,11 +230,18 @@ public class MicroServerTest {
 		verify(serverComm, atLeastOnce()).sendError(msg1.getSenderNickname(), "The user " + msg1.getSenderNickname() + " is already connected.");
 	}
 	
-//	@Test
-//	public void testProcessUserDisconnected() throws Exception {		
-//		when(serverComm.getNextMessage()).thenReturn(msg1).thenReturn(msg2).thenReturn(msg3).thenReturn(msg4).thenReturn(msg8).thenReturn(msg9).thenReturn(msg10).thenReturn(msg5).thenReturn(msg6).thenReturn(null);
-//		ms.start(serverComm);
-//		
-//		verify(serverComm, atLeastOnce()).sendOrder("userA", Order.createBuyOrder("userB", "ISCTE", 5, 21.0));
-//	}
+	@Test
+	public void testProcessUserDisconnected() throws Exception {		
+		when(serverComm.getNextMessage()).thenReturn(msg1).thenReturn(msg2).thenReturn(msg3).thenReturn(msg4).thenReturn(msg8).thenReturn(msg9).thenReturn(msg10).thenReturn(msg5).thenReturn(msg6).thenReturn(null);
+		
+		
+		when(msg6.getType()).thenReturn(Type.DISCONNECTED);
+		when(msg6.getOrder()).thenReturn(null);
+		when(msg6.getSenderNickname()).thenReturn("userB");
+		
+		ms.start(serverComm);
+		Assert.assertNull(ms);
+
+		verify(serverComm, atLeastOnce()).sendOrder("userA", Order.createBuyOrder("userB", "ISCTE", 5, 21.0));
+	}
 }

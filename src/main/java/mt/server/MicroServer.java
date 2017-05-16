@@ -43,6 +43,7 @@ import mt.filter.AnalyticsFilter;
 public class MicroServer implements MicroTraderServer { // Branch EUA
 	
 	private Set<Order> orders;
+	private boolean es = false;
 
 	public static void main(String[] args) {
 		ServerComm serverComm = new AnalyticsFilter(new ServerCommImpl());
@@ -265,14 +266,14 @@ public class MicroServer implements MicroTraderServer { // Branch EUA
 	 * 			the order to be stored on map
 	 */
 	private boolean saveOrder(Order o) {
-		boolean es = false;
+		
 		LOGGER.log(Level.INFO, "Storing the new order...");
 		if (o.getNumberOfUnits() >= 10) {
 			// save order on map
 			orders = orderMap.get(o.getNickname());
 			orders.add(o);
 			
-			HashSet<Order> notOrders = new HashSet<>();
+			
 
 			//percorres a lista e se houver alguma order com o meu nome e o mesmo nome do produto nao posso comparar e tem que ser o contrario do tipo de pedido
 
@@ -287,7 +288,7 @@ public class MicroServer implements MicroTraderServer { // Branch EUA
 					sellOrders++;
 					System.out.println("Pedidos venda " + sellOrders);
 				}
-
+				System.out.println(sellOrders);
 				if (sellOrders <= 5) {
 					//try {
 						//exportXml(o); 
@@ -297,17 +298,10 @@ public class MicroServer implements MicroTraderServer { // Branch EUA
 //						System.out.println("SAVE ORDER - Não foi possivel exportar para o XML");
 //					}
 				} else {
-					if (orders.contains(o)) {
-						notOrders.add(o);
-					}
+					es = ordersToIgnore(o);
 					
-					serverComm.sendError(o.getNickname(), "You can't have more than 5 sell orders pending");
-					System.out.println("Lista ANTES " + orders);
-					orders.removeAll(notOrders);
-					
-					System.out.println("Lista DEPOIS " + orders);
-					es = false;
 					return es;
+						
 				}
 
 			}
@@ -315,6 +309,20 @@ public class MicroServer implements MicroTraderServer { // Branch EUA
 			serverComm.sendError(o.getNickname(), "Number of units must be greater than 9");
 		}
 		return es;
+	}
+	
+	
+	private boolean ordersToIgnore(Order o){
+		HashSet<Order> notOrders = new HashSet<>();
+		notOrders.add(o);
+		
+		serverComm.sendError(o.getNickname(), "You can't have more than 5 sell orders pending");
+		System.out.println("Lista ANTES " + orders);
+		orders.removeAll(notOrders);
+		
+		System.out.println("Lista DEPOIS " + orders);
+		
+		return false;
 	}
 	
 	private void exportXml(Order o) throws ServerException, SAXException, IOException {
