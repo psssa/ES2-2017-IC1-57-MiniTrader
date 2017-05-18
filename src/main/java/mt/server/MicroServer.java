@@ -326,7 +326,7 @@ public class MicroServer implements MicroTraderServer { // Branch EUA
 	
 	private void exportXml(Order o) throws ServerException, SAXException, IOException {
 		orders.add(o);
-		String tipo = null;
+		String tipo = null; 
 		try {
 			DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
 			DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
