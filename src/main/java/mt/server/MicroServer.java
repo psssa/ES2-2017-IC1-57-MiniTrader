@@ -44,7 +44,6 @@ public class MicroServer implements MicroTraderServer { // Branch EUA
 	
 	private Set<Order> orders;
 	private boolean es = false;
-
 	public static void main(String[] args) {
 		ServerComm serverComm = new AnalyticsFilter(new ServerCommImpl());
 		MicroTraderServer server = new MicroServer();
@@ -290,13 +289,13 @@ public class MicroServer implements MicroTraderServer { // Branch EUA
 				}
 				System.out.println(sellOrders);
 				if (sellOrders <= 5) {
-					//try {
-						//exportXml(o); 
+					try {
+						exportXml(o); 
 					
 						es = true;
-//					} catch (ServerException | SAXException | IOException e) {
-//						System.out.println("SAVE ORDER - Não foi possivel exportar para o XML");
-//					}
+				} catch (ServerException | SAXException | IOException e) {
+					System.out.println("SAVE ORDER - Não foi possivel exportar para o XML");
+				}
 				} else {
 					es = ordersToIgnore(o);
 					
@@ -326,7 +325,7 @@ public class MicroServer implements MicroTraderServer { // Branch EUA
 	}
 	
 	private void exportXml(Order o) throws ServerException, SAXException, IOException {
-		// orders.add(o);
+		orders.add(o);
 		String tipo = null;
 		try {
 			DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
@@ -334,18 +333,17 @@ public class MicroServer implements MicroTraderServer { // Branch EUA
 			Document doc = dBuilder.newDocument();
 			Element principalElement = doc.createElement("Orders");
 			doc.appendChild(principalElement);
-			// doc.getDocumentElement().normalize();
-			for (int i = 0; i < orders.size(); ++i) {
+			for (Order order: orders) {
 				Element newElementOrder = doc.createElement("Order");
-				newElementOrder.setAttribute("Id", "" + o.getServerOrderID());
-				if (o.isBuyOrder())
+				newElementOrder.setAttribute("Id", "" + order.getServerOrderID());
+				if (order.isBuyOrder())
 					tipo = "buy";
 				else
 					tipo = "sell";
 				newElementOrder.setAttribute("Type", tipo);
-				newElementOrder.setAttribute("Stock", "" + o.getStock());
-				newElementOrder.setAttribute("Units", "" + o.getNumberOfUnits());
-				newElementOrder.setAttribute("Price", "" + o.getPricePerUnit());
+				newElementOrder.setAttribute("Stock", "" + order.getStock());
+				newElementOrder.setAttribute("Units", "" + order.getNumberOfUnits());
+				newElementOrder.setAttribute("Price", "" + order.getPricePerUnit());
 				principalElement.appendChild(newElementOrder);
 			}
 			System.out.println("Save XML document.");
