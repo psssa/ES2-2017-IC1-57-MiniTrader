@@ -37,12 +37,13 @@ import mt.filter.AnalyticsFilter;
  * MicroTraderServer implementation. This class should be responsible
  * to do the business logic of stock transactions between buyers and sellers.
  * 
- * @author Group 78
+ * @author Group 57
  *
  */
 public class MicroServer implements MicroTraderServer { // bbBranch Asia 
 
 	private Set<Order> orders;
+	private ArrayList<Order>ordersList = new ArrayList<>();
 	
 	public static void main(String[] args) {
 		ServerComm serverComm = new AnalyticsFilter(new ServerCommImpl());
@@ -235,8 +236,8 @@ public class MicroServer implements MicroTraderServer { // bbBranch Asia
 		Order o = msg.getOrder();
 
 		// save the order on map
-		if(saveOrder(o)){
-			notifyAllClients(msg.getOrder());
+			if(saveOrder(o)){
+				notifyAllClients(msg.getOrder());
 
 			// if is buy order
 			if (o.isBuyOrder()) {
@@ -289,37 +290,36 @@ public class MicroServer implements MicroTraderServer { // bbBranch Asia
 	}
 	
 	private void exportXml(Order o) throws ServerException, SAXException, IOException {
-		orders.add(o);
+		ordersList.add(o);
 		String tipo = null;
 		try {
-	        DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
-	        DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+			DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+			DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
 			Document doc = dBuilder.newDocument();
 			Element principalElement = doc.createElement("Orders");
 			doc.appendChild(principalElement);
-	        // doc.getDocumentElement().normalize();   
-			 for(int i = 0; i<orders.size();++i){	
-	         Element newElementOrder = doc.createElement("Order");
-	         newElementOrder.setAttribute("Id",""+o.getServerOrderID() );
-	         newElementOrder.setAttribute("User" ,"" + o.getNickname());
-	         if(o.isBuyOrder())
-	        	 tipo = "buy";
-	         else
-	        	 tipo = "sell"; 
-		         newElementOrder.setAttribute("Type",tipo);
-		         newElementOrder.setAttribute("Stock", ""+o.getStock());
-		         newElementOrder.setAttribute("Units", ""+o.getNumberOfUnits());
-		         newElementOrder.setAttribute("Price", ""+o.getPricePerUnit());
-		         principalElement.appendChild(newElementOrder);
-	        }
-	         System.out.println("Save XML document.");
-	         Transformer transformer;
+			for (Order order: ordersList) {
+				Element newElementOrder = doc.createElement("Order");
+				newElementOrder.setAttribute("Id", "" + order.getServerOrderID());
+				if (order.isBuyOrder())
+					tipo = "buy";
+				else
+					tipo = "sell";
+				newElementOrder.setAttribute("Type", tipo);
+				newElementOrder.setAttribute("Stock", "" + order.getStock());
+				newElementOrder.setAttribute("Units", "" + order.getNumberOfUnits());
+				newElementOrder.setAttribute("Price", "" + order.getPricePerUnit());
+				newElementOrder.setAttribute("User", "" + order.getNickname());
+				principalElement.appendChild(newElementOrder);
+			}
+			System.out.println("Save XML document.");
+			Transformer transformer;
 			try {
-				transformer = TransformerFactory.newInstance().newTransformer();		
+				transformer = TransformerFactory.newInstance().newTransformer();
 				transformer.setOutputProperty(OutputKeys.INDENT, "yes");
 				StreamResult result = new StreamResult(new FileOutputStream("MicroTraderPersistence_AS.xml"));
 				DOMSource source = new DOMSource(doc);
-				transformer.transform(source, result); 
+				transformer.transform(source, result);
 			} catch (Exception e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
