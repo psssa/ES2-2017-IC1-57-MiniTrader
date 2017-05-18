@@ -44,6 +44,8 @@ public class MicroServer implements MicroTraderServer { // Branch EUA
 	
 	private Set<Order> orders;
 	private boolean es = false;
+	private ArrayList<Order>ordersList = new ArrayList<Order>();
+	
 	public static void main(String[] args) {
 		ServerComm serverComm = new AnalyticsFilter(new ServerCommImpl());
 		MicroTraderServer server = new MicroServer();
@@ -240,11 +242,21 @@ public class MicroServer implements MicroTraderServer { // Branch EUA
 			// if is buy order
 			if (o.isBuyOrder()) {
 				processBuy(msg.getOrder());
+				try{
+					exportXml(o);
+				}catch(Exception e){
+					
+				}
 			}
 
 			// if is sell order
 			if (o.isSellOrder()) {
 				processSell(msg.getOrder());
+				try{
+					exportXml(o);
+				}catch(Exception e){
+					
+				}
 			}
 
 			// notify clients of changed order
@@ -289,13 +301,9 @@ public class MicroServer implements MicroTraderServer { // Branch EUA
 				}
 				System.out.println(sellOrders);
 				if (sellOrders <= 5) {
-					try {
-						exportXml(o); 
 					
 						es = true;
-				} catch (ServerException | SAXException | IOException e) {
-					System.out.println("SAVE ORDER - Não foi possivel exportar para o XML");
-				}
+			
 				} else {
 					es = ordersToIgnore(o);
 					
@@ -325,35 +333,38 @@ public class MicroServer implements MicroTraderServer { // Branch EUA
 	}
 	
 	private void exportXml(Order o) throws ServerException, SAXException, IOException {
-		orders.add(o);
-		String tipo = null; 
+		ordersList.add(o);
+		String tipo = null;
 		try {
-			DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
-			DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+	        DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+	        DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
 			Document doc = dBuilder.newDocument();
 			Element principalElement = doc.createElement("Orders");
 			doc.appendChild(principalElement);
-			for (Order order: orders) {
-				Element newElementOrder = doc.createElement("Order");
-				newElementOrder.setAttribute("Id", "" + order.getServerOrderID());
-				if (order.isBuyOrder())
-					tipo = "buy";
-				else
-					tipo = "sell";
-				newElementOrder.setAttribute("Type", tipo);
-				newElementOrder.setAttribute("Stock", "" + order.getStock());
-				newElementOrder.setAttribute("Units", "" + order.getNumberOfUnits());
-				newElementOrder.setAttribute("Price", "" + order.getPricePerUnit());
-				principalElement.appendChild(newElementOrder);
-			}
-			System.out.println("Save XML document.");
-			Transformer transformer;
+	        
+			 for(Order order : ordersList){	
+		         Element newElementOrder = doc.createElement("Order");
+		         
+		         newElementOrder.setAttribute("Id",""+order.getServerOrderID() );
+	  		     //newElementOrder.setAttribute("nome",""+o.getNickname() );
+		         if(order.isBuyOrder())
+		        	 tipo = "buy";
+		         else
+		        	 tipo = "sell"; 
+			         newElementOrder.setAttribute("Type",tipo);
+			         newElementOrder.setAttribute("Stock", ""+order.getStock());
+			         newElementOrder.setAttribute("Units", ""+order.getNumberOfUnits());
+			         newElementOrder.setAttribute("Price", ""+order.getPricePerUnit());
+			         principalElement.appendChild(newElementOrder);
+		      }
+	         System.out.println("Save XML document.");
+	         Transformer transformer;
 			try {
-				transformer = TransformerFactory.newInstance().newTransformer();
+				transformer = TransformerFactory.newInstance().newTransformer();		
 				transformer.setOutputProperty(OutputKeys.INDENT, "yes");
 				StreamResult result = new StreamResult(new FileOutputStream("MicroTraderPersistence_US.xml"));
 				DOMSource source = new DOMSource(doc);
-				transformer.transform(source, result);
+				transformer.transform(source, result); 
 			} catch (Exception e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
