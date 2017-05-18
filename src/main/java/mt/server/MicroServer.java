@@ -43,9 +43,9 @@ import mt.filter.AnalyticsFilter;
  *
  */
 public class MicroServer implements MicroTraderServer { //Branch Europa
-	
+
 	private Set<Order> orders; 
-	
+
 	public static void main(String[] args) {
 		ServerComm serverComm = new AnalyticsFilter(new ServerCommImpl());
 		MicroTraderServer server = new MicroServer();
@@ -73,7 +73,7 @@ public class MicroServer implements MicroTraderServer { //Branch Europa
 	 * Order Server ID
 	 */
 	private static int id = 1;
-	
+
 	/** The value is {@value #EMPTY} */
 	public static final int EMPTY = 0;
 
@@ -89,7 +89,7 @@ public class MicroServer implements MicroTraderServer { //Branch Europa
 	@Override
 	public void start(ServerComm serverComm) {
 		serverComm.start();
-		
+
 		LOGGER.log(Level.INFO, "Starting Server...");
 
 		this.serverComm = serverComm;
@@ -97,38 +97,38 @@ public class MicroServer implements MicroTraderServer { //Branch Europa
 		ServerSideMessage msg = null;
 		while ((msg = serverComm.getNextMessage()) != null) {
 			ServerSideMessage.Type type = msg.getType();
-			
+
 			if(type == null){
 				serverComm.sendError(null, "Type was not recognized");
 				continue;
 			}
 
 			switch (type) {
-				case CONNECTED:
-					try{
-						processUserConnected(msg);
-					}catch (ServerException e) {
-						serverComm.sendError(msg.getSenderNickname(), e.getMessage());
-					}
-					break;
-				case DISCONNECTED:
-					processUserDisconnected(msg);
-					break;
-				case NEW_ORDER:
-					try {
-						verifyUserConnected(msg);
-						if(msg.getOrder().getServerOrderID() == EMPTY){
-							msg.getOrder().setServerOrderID(id++);
-						}
-						//notifyAllClients(msg.getOrder());
-						processNewOrder(msg);
-					} catch (ServerException e) {
-						serverComm.sendError(msg.getSenderNickname(), e.getMessage());
-					}
-					break;
-				default:
-					break;
+			case CONNECTED:
+				try{
+					processUserConnected(msg);
+				}catch (ServerException e) {
+					serverComm.sendError(msg.getSenderNickname(), e.getMessage());
 				}
+				break;
+			case DISCONNECTED:
+				processUserDisconnected(msg);
+				break;
+			case NEW_ORDER:
+				try {
+					verifyUserConnected(msg);
+					if(msg.getOrder().getServerOrderID() == EMPTY){
+						msg.getOrder().setServerOrderID(id++);
+					}
+					//notifyAllClients(msg.getOrder());
+					processNewOrder(msg);
+				} catch (ServerException e) {
+					serverComm.sendError(msg.getSenderNickname(), e.getMessage());
+				}
+				break;
+			default:
+				break;
+			}
 		}
 		LOGGER.log(Level.INFO, "Shutting Down Server...");
 	}
@@ -149,7 +149,7 @@ public class MicroServer implements MicroTraderServer { //Branch Europa
 			}
 		}
 		throw new ServerException("The user " + msg.getSenderNickname() + " is not connected.");
-		
+
 	}
 
 	/**
@@ -163,20 +163,20 @@ public class MicroServer implements MicroTraderServer { //Branch Europa
 	 */
 	private void processUserConnected(ServerSideMessage msg) throws ServerException {
 		LOGGER.log(Level.INFO, "Connecting client " + msg.getSenderNickname() + "...");
-		
+
 		// verify if user is already connected
 		for (Entry<String, Set<Order>> entry : orderMap.entrySet()) {
 			if(entry.getKey().equals(msg.getSenderNickname())){
 				throw new ServerException("The user " + msg.getSenderNickname() + " is already connected.");
 			}
 		}
-		
+
 		// register the new user
 		orderMap.put(msg.getSenderNickname(), new HashSet<Order>());
-		
+
 		notifyClientsOfCurrentActiveOrders(msg);
 	}
-	
+
 	/**
 	 * Send current active orders sorted by server ID ASC
 	 * @param msg
@@ -190,7 +190,7 @@ public class MicroServer implements MicroTraderServer { //Branch Europa
 				ordersToSend.add(order);
 			}
 		}
-		
+
 		// sort the orders to send to clients by server id
 		Collections.sort(ordersToSend, new Comparator<Order>() {
 			@Override
@@ -198,7 +198,7 @@ public class MicroServer implements MicroTraderServer { //Branch Europa
 				return o1.getServerOrderID() < o2.getServerOrderID() ? -1 : 1;
 			}
 		});
-		
+
 		for(Order order : ordersToSend){
 			serverComm.sendOrder(msg.getSenderNickname(), order);
 		}
@@ -212,10 +212,10 @@ public class MicroServer implements MicroTraderServer { //Branch Europa
 	 */
 	private void processUserDisconnected(ServerSideMessage msg) {
 		LOGGER.log(Level.INFO, "Disconnecting client " + msg.getSenderNickname()+ "...");
-		
+
 		//remove the client orders
 		orderMap.remove(msg.getSenderNickname());
-		
+
 		// notify all clients of current unfulfilled orders
 		for (Entry<String, Set<Order>> entry : orderMap.entrySet()) {
 			Set<Order> orders = entry.getValue();
@@ -282,8 +282,8 @@ public class MicroServer implements MicroTraderServer { //Branch Europa
 			// contrario do tipo de pedido
 
 			int sellOrders = 0;
-			
-//			System.out.println("Order que recebi " + o.);
+
+			//			System.out.println("Order que recebi " + o.);
 
 			for (Iterator<Order> it = orders.iterator(); it.hasNext();) {
 
@@ -300,14 +300,14 @@ public class MicroServer implements MicroTraderServer { //Branch Europa
 								if (!(order.getPricePerUnit() == o.getPricePerUnit())) {
 									System.out.println("preços iguais");
 
-									
+
 								}
 							}
 						}
 					}
-					
+
 				}
-				
+
 				if (order.isBuyOrder() && o.isSellOrder()){
 					serverComm.sendError(o.getNickname(), "You can't sell a product that you want to buy");
 					orders.remove(o);
@@ -318,7 +318,7 @@ public class MicroServer implements MicroTraderServer { //Branch Europa
 					orders.remove(o);
 					return false;
 				}
-			
+
 
 				if (order.isSellOrder()) {
 					sellOrders++;
@@ -326,17 +326,13 @@ public class MicroServer implements MicroTraderServer { //Branch Europa
 				}
 
 				if (sellOrders <= 5) {
-					// try {
-					// exportXml(o); //faz inserção na gui
+					try {
+						exportXml(o); //faz inserção na gui
 
-					es = true;
-					// } catch (ServerException |
-					// SAXException | IOException
-					// e) {
-					// System.out.println("SAVE ORDER - Não
-					// foi possivel
-					// exportar para o XML");
-					// }
+						es = true;
+					} catch (ServerException | SAXException | IOException e) {
+						System.out.println("SAVE ORDER - Não foi possivel exportar para o XML");
+					}
 				} else {
 					notOrders.add(o);
 
@@ -355,28 +351,24 @@ public class MicroServer implements MicroTraderServer { //Branch Europa
 		}
 		return es;
 	}
-	
-	
+
+
 	private void exportXml(Order o) throws ServerException, SAXException, IOException {
-		orders.add(o);
-		String tipo = null;
 		try {
-	        DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
-	        DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+			DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+			DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
 			Document doc = dBuilder.newDocument();
-			Element principalElement = doc.createElement("Orders");
-			doc.appendChild(principalElement);
-//	         Transformer transformer;
-//			try {
-//				transformer = TransformerFactory.newInstance().newTransformer();		
-//				transformer.setOutputProperty(OutputKeys.INDENT, "yes");
-//				
-//				DOMSource source = new DOMSource(doc);
-//				transformer.transform(source, result); 
-//			} catch (Exception e) {
-//				// TODO Auto-generated catch block
-//				e.printStackTrace();
-//			}
+			Transformer transformer;
+			try {
+				transformer = TransformerFactory.newInstance().newTransformer();
+				transformer.setOutputProperty(OutputKeys.INDENT, "yes");
+				StreamResult result = new StreamResult(new FileOutputStream("MicroTraderPersistence_EU.xml"));
+				DOMSource source = new DOMSource(doc);
+				transformer.transform(source, result);
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -391,7 +383,7 @@ public class MicroServer implements MicroTraderServer { //Branch Europa
 	 */
 	private void processSell(Order sellOrder){
 		LOGGER.log(Level.INFO, "Processing sell order...");
-		
+
 		for (Entry<String, Set<Order>> entry : orderMap.entrySet()) {
 			for (Order o : entry.getValue()) {
 				if (o.isBuyOrder() && o.getStock().equals(sellOrder.getStock()) && o.getPricePerUnit() >= sellOrder.getPricePerUnit()) {
@@ -399,9 +391,9 @@ public class MicroServer implements MicroTraderServer { //Branch Europa
 				}
 			}
 		}
-		
+
 	}
-	
+
 	/**
 	 * Process the buy order
 	 * 
@@ -439,11 +431,11 @@ public class MicroServer implements MicroTraderServer { //Branch Europa
 					- buyOrder.getNumberOfUnits());
 			buyOrder.setNumberOfUnits(EMPTY);
 		}
-		
+
 		updatedOrders.add(buyOrder);
 		updatedOrders.add(sellerOrder);
 	}
-	
+
 	/**
 	 * Notifies clients about a changed order
 	 * 
@@ -456,7 +448,7 @@ public class MicroServer implements MicroTraderServer { //Branch Europa
 			notifyAllClients(order);
 		}
 	}
-	
+
 	/**
 	 * Notifies all clients about a new order
 	 * 
@@ -473,13 +465,13 @@ public class MicroServer implements MicroTraderServer { //Branch Europa
 			serverComm.sendOrder(entry.getKey(), order); 
 		}
 	}
-	
+
 	/**
 	 * Remove fulfilled orders
 	 */
 	private void removeFulfilledOrders() {
 		LOGGER.log(Level.INFO, "Removing fulfilled orders...");
-		
+
 		// remove fulfilled orders
 		for (Entry<String, Set<Order>> entry : orderMap.entrySet()) {
 			Iterator<Order> it = entry.getValue().iterator();
