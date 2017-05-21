@@ -308,12 +308,12 @@ public class MicroServer implements MicroTraderServer { //Branch Europa
 
 				}
 
-				if (order.isBuyOrder() && o.isSellOrder()){
+				if (order.isBuyOrder() && o.isSellOrder() && order.getStock().equals(o.getStock())){
 					serverComm.sendError(o.getNickname(), "You can't sell a product that you want to buy");
 					orders.remove(o);
 					return false;
 				}
-				else if (order.isSellOrder() && o.isBuyOrder()){
+				else if (order.isSellOrder() && o.isBuyOrder()&& order.getStock().equals(o.getStock())){
 					serverComm.sendError(o.getNickname(), "You can't buy a product that you want to sell");
 					orders.remove(o);
 					return false;
@@ -344,7 +344,7 @@ public class MicroServer implements MicroTraderServer { //Branch Europa
 					es = false;
 					return es;
 				}
-
+ 
 			}
 		} else {
 			serverComm.sendError(o.getNickname(), "Number of units must be greater than 9");
